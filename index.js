@@ -153,3 +153,11 @@ function reviewAsAttachment(review) {
         .text(review.text)
         .images([new builder.CardImage().url(review.image)]);
 }
+
+set http_proxy=lcc-http-proxy.d48.lilly.com:9000
+
+
+npm config set proxy http://lcc-http-proxy.d48.lilly.com:9000
+
+npm config set http-proxy http://lcc-http-proxy.d48.lilly.com:9000
+
