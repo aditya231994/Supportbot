@@ -25,7 +25,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
   
 
     var apiairecognizer = require('api-ai-recognizer');
-    var recognizer = new apiairecognizer('8361529c5db2436bb19e683f86bd1291');
+    var recognizer = new apiairecognizer('af141d3ab3644850b56f8327ce27aea3');
 
 // You can provide your own model by specifing the 'LUIS_MODEL_URL' environment variable
 // This Url can be obtained by uploading or creating your model from the LUIS portal: https://www.luis.ai/
@@ -114,10 +114,10 @@ bot.dialog('Help', function (session) {
     matches: 'Help'
 });
 
-bot.dialog('Hello', function (session) {
+bot.dialog('Greetings', function (session) {
     session.endDialog('Hello! Try asking me things like \'raise an SR\', \'search hotels near LAX airport\' or \'show me the reviews of The Bot Resort\'');
 }).triggerAction({
-    matches: 'Hello'
+    matches: 'Greetings'
 });
 
 // Spell Check
