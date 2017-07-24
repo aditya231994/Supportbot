@@ -39,7 +39,7 @@ bot.dialog('RaiseIncident', [
 
         // try extracting entities
         var errorentity = builder.EntityRecognizer.findEntity(args.intent.entities, 'Error');
-        var machineentity = builder.EntityRecognizer.findEntity(args.intent.entities, 'machine');
+        var machineentity = builder.EntityRecognizer.findEntity(args.intent.entities, 'Machine');
         if (errorentity) {
 			console.log("******error*******"+errorentity.entity);
             // error entity detected, continue to next step
@@ -62,7 +62,7 @@ bot.dialog('RaiseIncident', [
        if (session.dialogData.searchType === 'Error') {
               message += ' for %s error...';
           } else {
-              message += ' for %s machine...';
+              message += ' for %s ...';
           }
 
         session.send(message, response);
@@ -90,32 +90,84 @@ bot.dialog('RaiseIncident', [
         session.send('Please enter detail descriptiotn for the incident');
     }
 });
+bot.dialog('RaiseSR', [
+    function (session, args, next) {
+        session.send('Welcome to the Service Request raise service: \'%s\'', session.message.text);
 
-bot.dialog('ShowHotelsReviews', function (session, args) {
-    // retrieve hotel name from matched entities
-    var hotelEntity = builder.EntityRecognizer.findEntity(args.intent.entities, 'Hotel');
-    if (hotelEntity) {
-        session.send('Looking for reviews of \'%s\'...', hotelEntity.entity);
-        Store.searchHotelReviews(hotelEntity.entity)
-            .then(function (reviews) {
-                var message = new builder.Message()
-                    .attachmentLayout(builder.AttachmentLayout.carousel)
-                    .attachments(reviews.map(reviewAsAttachment));
-                session.endDialog(message);
-            });
+        // try extracting entities
+        var accessEntity = builder.EntityRecognizer.findEntity(args.intent.entities, 'Access');
+        var projectEntity = builder.EntityRecognizer.findEntity(args.intent.entities, 'ProjectName');
+		var InfoEntity = builder.EntityRecognizer.findEntity(args.intent.entities, 'Information');
+        if (accessEntity) {
+			console.log("******access*******"+accessEntity.entity);
+            // access entity detected, continue to next step
+            session.dialogData.searchType = 'Access';
+			session.dialogData.ProjectName = projectEntity.entity;
+            next({ response: accessEntity.entity });
+        } else if (projectEntity) {
+			console.log("project"+projectEntity.entity);
+            // project entity detected, continue to next step
+            session.dialogData.searchType = 'Project';
+            next({ response: projectEntity.entity });
+        } 
+		else if (InfoEntity) {
+			console.log("information"+InfoEntity.entity);
+            // project entity detected, continue to next step
+            session.dialogData.searchType = 'Information';
+            next({ response: InfoEntity.entity });
+        } else {
+            // no entities detected, ask user 
+            builder.Prompts.text(session, 'Please tell me about the where you want access?');
+        }
+     },
+    function (session, results) {
+       var response = results.response;
+
+         var message = 'raising a Service Request';
+       if (session.dialogData.searchType === 'Access') {
+              message += ' for %s on '+ session.dialogData.ProjectName;
+
+			  
+          } 
+		  
+		  else {
+              message += ' for getting information on %s...';
+          }
+
+        session.send(message, response);
+
+        // // Async search
+        // // Store
+            // // .searchHotels(response)
+            // // .then(function (hotels) {
+                // // // args
+                // // session.send('I found %d hotels:', hotels.length);
+
+                // // var message = new builder.Message()
+                    // // .attachmentLayout(builder.AttachmentLayout.carousel)
+                    // // .attachments(hotels.map(hotelAsAttachment));
+
+                // // session.send(message);
+
+                // // // End
+                // // session.endDialog();
+            // // });
+     }
+]).triggerAction({
+    matches: 'RaiseSR',
+    onInterrupted: function (session) {
+        session.send('Please enter detail description for the Service Request');
     }
-}).triggerAction({
-    matches: 'ShowHotelsReviews'
 });
 
 bot.dialog('Help', function (session) {
-    session.endDialog('Hi! Try asking me things like \'Raise an incident\', \'search hotels near LAX airport\' or \'show me the reviews of The Bot Resort\'');
+    session.endDialog('Hey! Try asking me things like \'VDI machine is not working\', \'I need access on this Mercury(project name)\' or \'I am getting this error on my machine\'');
 }).triggerAction({
     matches: 'Help'
 });
 
 bot.dialog('Greetings', function (session) {
-    session.endDialog('Hello! Try asking me things like \'raise an SR\', \'search hotels near LAX airport\' or \'show me the reviews of The Bot Resort\'');
+    session.endDialog('Hello! Try asking me things like \'VDI machine is not working\', \'I need access on this Mercury(project name)\' or \'I am getting this error on my machine\'');
 }).triggerAction({
     matches: 'Greetings'
 });
@@ -138,23 +190,3 @@ if (process.env.IS_SPELL_CORRECTION_ENABLED === 'true') {
     });
 }
 
-// Helpers
-function hotelAsAttachment(hotel) {
-    return new builder.HeroCard()
-        .title(hotel.name)
-        .subtitle('%d stars. %d reviews. From $%d per night.', hotel.rating, hotel.numberOfReviews, hotel.priceStarting)
-        .images([new builder.CardImage().url(hotel.image)])
-        .buttons([
-            new builder.CardAction()
-                .title('More details')
-                .type('openUrl')
-                .value('https://www.bing.com/search?q=hotels+in+' + encodeURIComponent(hotel.location))
-        ]);
-}
-
-function reviewAsAttachment(review) {
-    return new builder.ThumbnailCard()
-        .title(review.title)
-        .text(review.text)
-        .images([new builder.CardImage().url(review.image)]);
-}
