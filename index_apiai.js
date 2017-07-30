@@ -5,6 +5,7 @@ var builder = require('botbuilder');
 var restify = require('restify');
 var Store = require('./store');
 var spellService = require('./spell-service');
+var https= require('https');
 
 // Setup Restify Server
 var server = restify.createServer();
@@ -26,6 +27,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
 
     var apiairecognizer = require('api-ai-recognizer');
     var recognizer = new apiairecognizer('af141d3ab3644850b56f8327ce27aea3');
+	
 
 // You can provide your own model by specifing the 'LUIS_MODEL_URL' environment variable
 // This Url can be obtained by uploading or creating your model from the LUIS portal: https://www.luis.ai/
@@ -60,13 +62,49 @@ bot.dialog('RaiseIncident', [
 
          var message = 'raising an incident';
        if (session.dialogData.searchType === 'Error') {
-              message += ' for %s error...';
+              message += ' for %s error.... please wait!';
           } else {
-              message += ' for %s ...';
+              message += ' for %s .... Please wait!';
           }
-
+		
         session.send(message, response);
+		var bodyjson = {
+			
+				"Request":{
+						"short_description":response,
+						"comments":"These are my comments"
+						 }
+		};
+		var options = {
+		   host: 'dev31468.service-now.com',
+		   body: bodyjson,
+		   
+		   path: 'https://dev31468.service-now.com/api/now/v1/table/incident',
+		   // authentication headers
+		   headers: {
+			 
+			  'Authorization': 'Basic YWRtaW46V2ViQDIwMTc='
+		   }   
+		};
 
+//this is the call
+request = https.get(options, function(res,body){
+   var body = "";
+   res.on('data', function(data) {
+      body += data;
+   });
+   res.on('end', function() {
+	   var snResponse = JSON.parse(body);
+    //here we have the full response, html or json object
+      console.log(snResponse.result[0].number+" incident has been raised. Please note it down for your reference");
+	  console.log(snResponse.result[0].short_description+" description");
+   })
+   res.on('error', function(e) {
+      onsole.log("Got error: " + e.message);
+   });
+	});
+	}
+	
         // // Async search
         // // Store
             // // .searchHotels(response)
@@ -83,11 +121,11 @@ bot.dialog('RaiseIncident', [
                 // // // End
                 // // session.endDialog();
             // // });
-     }
+     
 ]).triggerAction({
     matches: 'RaiseIncident',
     onInterrupted: function (session) {
-        session.send('Please enter detail descriptiotn for the incident');
+        //session.send('Please enter detail descriptiotn for the incident');
     }
 });
 bot.dialog('RaiseSR', [
@@ -190,3 +228,4 @@ if (process.env.IS_SPELL_CORRECTION_ENABLED === 'true') {
     });
 }
 
+// Helpers
